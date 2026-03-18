@@ -1,28 +1,23 @@
 # Transaction Categorizer
 
 ## Current State
-The app has a top-nav tab layout with a slim sidebar showing quick actions. The Dashboard renders KPI cards, a bar chart, a pie chart, and a category summary table.
+The app stores transactions and mapping rules in React state only (in-memory). Data is lost on page refresh. No persistence layer exists.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Date range filter (start/end date pickers) in the sidebar that filter all dashboard data
-- Net balance KPI card (income minus expenses)
-- Larger, more prominent pie chart for expense breakdown as the hero chart on the dashboard
+- `src/frontend/src/lib/db.ts`: IndexedDB wrapper using the native browser API. Stores `transactions` and `mappingRules` in separate object stores within a single `fintrack-db` database.
+- On app load, hydrate state from IndexedDB (falling back to sample data if empty).
+- On every state change to transactions or rules, persist to IndexedDB automatically.
+- A "Clear stored data" action that wipes IndexedDB and resets to sample data.
 
 ### Modify
-- Sidebar: replace quick-action list with a proper fintech filter panel (date range + category filter + action buttons)
-- Dashboard KPI strip: show Total Income, Total Expenses, Net Balance, and Categorization Rate
-- Dashboard layout: pie chart promoted to primary position, bar chart secondary
-- Visual style: darker navy sidebar, cleaner card styling to match professional fintech aesthetic
+- `App.tsx`: Replace `useState` initializers with async hydration from IndexedDB. Persist on every change to `transactions` and `rules`.
 
 ### Remove
-- Separate income/expenses summary row (folded into KPI strip)
+- Nothing removed.
 
 ## Implementation Plan
-1. Add `dateRange` state (`{ from: string; to: string }`) in App.tsx, pass down to Dashboard
-2. Refactor sidebar in App.tsx to include date pickers and a category multi-select filter
-3. Rewrite Dashboard.tsx to accept and apply `dateRange` + `categoryFilter` props, filter transactions before computing stats
-4. Redesign KPI strip: Income, Expenses, Net Balance, Success Rate
-5. Promote pie chart to full-width hero, move bar chart below it
-6. Apply fintech color tokens: deep navy sidebar, gradient accents on KPI cards
+1. Create `src/frontend/src/lib/db.ts` with open/read/write helpers for IndexedDB (`fintrack-db`, stores: `transactions`, `mappingRules`).
+2. In `App.tsx`, on mount load persisted data from IndexedDB (or sample data if none). After every update to transactions or rules, write to IndexedDB.
+3. Add a subtle sidebar button to clear stored data and reset to sample data.

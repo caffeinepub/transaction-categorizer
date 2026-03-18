@@ -6,13 +6,15 @@ import {
   BarChart3,
   Download,
   FileText,
+  HardDrive,
   LayoutDashboard,
   ListOrdered,
   Tags,
+  Trash2,
   TrendingUp,
   Upload,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import Dashboard from "./components/Dashboard";
 import MappingManager from "./components/MappingManager";
@@ -23,6 +25,13 @@ import {
   parseMappingCSV,
   parseTransactionCSV,
 } from "./lib/csvUtils";
+import {
+  clearAll,
+  loadMappingRules,
+  loadTransactions,
+  saveMappingRules,
+  saveTransactions,
+} from "./lib/db";
 import { SAMPLE_RULES, buildSampleTransactions } from "./lib/sampleData";
 import type { ActiveTab, MappingRule, Transaction } from "./types";
 
@@ -55,9 +64,60 @@ export default function App() {
     to: "",
   });
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Track whether initial load from IndexedDB is complete
+  const initializedRef = useRef(false);
 
   const txFileRef = useRef<HTMLInputElement>(null);
   const mapFileRef = useRef<HTMLInputElement>(null);
+
+  // Load from IndexedDB on mount
+  useEffect(() => {
+    async function loadFromDB() {
+      try {
+        const [savedTxs, savedRules] = await Promise.all([
+          loadTransactions(),
+          loadMappingRules(),
+        ]);
+
+        if (savedTxs.length > 0 || savedRules.length > 0) {
+          if (savedRules.length > 0) setRules(savedRules);
+          if (savedTxs.length > 0) setTransactions(savedTxs);
+          setIsSaved(true);
+        } else {
+          // First run: persist sample data
+          const sampleTxs = buildSampleTransactions();
+          await Promise.all([
+            saveTransactions(sampleTxs),
+            saveMappingRules(SAMPLE_RULES),
+          ]);
+          setIsSaved(true);
+        }
+      } catch (err) {
+        console.error("IndexedDB load failed:", err);
+      } finally {
+        initializedRef.current = true;
+      }
+    }
+    loadFromDB();
+  }, []);
+
+  // Persist transactions whenever they change (after init)
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    saveTransactions(transactions)
+      .then(() => setIsSaved(true))
+      .catch((err) => console.error("Failed to save transactions:", err));
+  }, [transactions]);
+
+  // Persist rules whenever they change (after init)
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    saveMappingRules(rules)
+      .then(() => setIsSaved(true))
+      .catch((err) => console.error("Failed to save rules:", err));
+  }, [rules]);
 
   const handleRulesChange = (newRules: MappingRule[]) => {
     setRules(newRules);
@@ -96,6 +156,26 @@ export default function App() {
   const handleExport = () => {
     exportTransactionsCSV(transactions);
     toast.success("Exported categorized transactions");
+  };
+
+  const handleReset = async () => {
+    try {
+      await clearAll();
+      const sampleTxs = buildSampleTransactions();
+      initializedRef.current = false;
+      setTransactions(sampleTxs);
+      setRules(SAMPLE_RULES);
+      await Promise.all([
+        saveTransactions(sampleTxs),
+        saveMappingRules(SAMPLE_RULES),
+      ]);
+      initializedRef.current = true;
+      setIsSaved(true);
+      toast.success("Data reset to sample");
+    } catch (err) {
+      console.error("Reset failed:", err);
+      toast.error("Reset failed");
+    }
   };
 
   const categorizedCount = transactions.filter(
@@ -319,11 +399,20 @@ export default function App() {
           <button
             type="button"
             onClick={handleExport}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-white/50 hover:bg-white/5 hover:text-white/80 transition-all"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-white/50 hover:bg-white/5 hover:text-white/80 transition-all mb-0.5"
             data-ocid="sidebar.export_button"
           >
             <Download className="h-4 w-4 text-primary/70" />
             Export Data
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-white/50 hover:bg-red-500/10 hover:text-red-400 transition-all"
+            data-ocid="sidebar.reset.button"
+          >
+            <Trash2 className="h-4 w-4 text-red-500/60" />
+            Reset Data
           </button>
         </div>
 
@@ -339,6 +428,14 @@ export default function App() {
           <p className="mt-1.5 text-[10px] text-white/40">
             {categorizedCount} categorized · {categorizationPct}%
           </p>
+          {isSaved && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <HardDrive className="h-3 w-3 text-emerald-400" />
+              <span className="text-[10px] text-emerald-400">
+                Saved locally
+              </span>
+            </div>
+          )}
         </div>
       </aside>
 
