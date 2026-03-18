@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* Page canvas: light cool gray */
+    --background: 0.968 0.008 243;
+    --foreground: 0.155 0.02 256;
+
+    /* Cards: white */
+    --card: 1 0 0;
+    --card-foreground: 0.155 0.02 256;
+
+    --popover: 1 0 0;
+    --popover-foreground: 0.155 0.02 256;
+
+    /* Primary: vivid blue #2563EB */
+    --primary: 0.508 0.185 257;
+    --primary-foreground: 1 0 0;
+
+    /* Secondary surfaces */
+    --secondary: 0.955 0.01 243;
+    --secondary-foreground: 0.155 0.02 256;
+
+    /* Muted text #64748B */
+    --muted: 0.955 0.01 243;
+    --muted-foreground: 0.52 0.028 243;
+
+    /* Accent hover */
+    --accent: 0.942 0.012 243;
+    --accent-foreground: 0.155 0.02 256;
+
+    /* Destructive / expense red */
+    --destructive: 0.556 0.195 27;
+    --destructive-foreground: 1 0 0;
+
+    /* Border: #E2E8F0 */
+    --border: 0.912 0.014 243;
+    --input: 0.912 0.014 243;
+    --ring: 0.508 0.185 257;
+
+    /* Success / income green */
+    --success: 0.62 0.155 152;
+    --success-foreground: 1 0 0;
+
+    /* Warning / amber */
+    --warning: 0.69 0.17 55;
+    --warning-foreground: 0.15 0.02 50;
+
+    /* Sidebar / navy deep #0F1629 */
+    --navy: 0.178 0.042 258;
+    --navy-foreground: 0.97 0 0;
+
+    /* Chart palette */
+    --chart-1: 0.508 0.185 257;
+    --chart-2: 0.62 0.155 152;
+    --chart-3: 0.69 0.17 55;
+    --chart-4: 0.58 0.24 303;
+    --chart-5: 0.69 0.19 31;
+    --chart-6: 0.62 0.14 185;
+    --chart-7: 0.74 0.19 70;
+    --chart-8: 0.52 0.12 243;
+
+    --sidebar: 0.178 0.042 258;
+    --sidebar-foreground: 0.97 0 0;
+    --sidebar-primary: 0.508 0.185 257;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.22 0.05 258;
+    --sidebar-accent-foreground: 0.97 0 0;
+    --sidebar-border: 0.25 0.04 258;
+    --sidebar-ring: 0.508 0.185 257;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  }
+
+  input[type="date"] {
+    color-scheme: light;
+  }
+}
